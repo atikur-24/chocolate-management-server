@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.USER_NAME}:${process.env.SECRET_KEY}@cluster0.28gkq0d.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -36,12 +36,45 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/chocolates/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await chocolateCollection.findOne(query);
+      res.send(result);
+    });
+
     // CREATE
     app.post('/chocolates', async(req, res) => {
       const newChocolates = req.body;     
       const result = await chocolateCollection.insertOne(newChocolates);
       res.send(result);
     });
+
+    //UPDATE
+    app.put('/chocolates/:id', async(req, res) => {
+      const id = req.params.id;
+      const updateChocolate = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const chocolate = {
+        $set: {
+          name: updateChocolate.name,
+          country: updateChocolate.country,
+          photo: updateChocolate.photo,
+          category: updateChocolate.category
+        }
+      };
+      const result = await chocolateCollection.updateOne(filter, chocolate, options);
+      res.send(result);
+    })
+
+    // DELETE
+    app.delete('/chocolates/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await chocolateCollection.deleteOne(query);
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
